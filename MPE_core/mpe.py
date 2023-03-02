@@ -136,7 +136,7 @@ class ImgPatchExtractor:
   # --> img_path: path to the original image
   # <-- arr: the imported pixel array (numpy array)
   def load_INBreast_img(self, img_path):
-    img   = pdcm.dcmread(self.root_dir + img_path + '.dcm')
+    img   = pdcm.dcmread(self.root_dir + 'DICOM/' + img_path + '.dcm')
     arr   = img.pixel_array
 
     return arr
@@ -200,8 +200,9 @@ class ImgPatchExtractor:
   #
   # --> mask_path: path to the annotation mask
   # <-- mask: the imported pixel array (numpy array)
-  def load_INBreast_img(self, img_path):
-    mask_obj = anot.Annotation(paths['xml'], self.mask_path, self.np_img.shape)
+  def load_INBreast_mask(self, img_path):
+    xml = self.root_dir + 'XML/'
+    mask_obj = anot.Annotation(xml, self.mask_path, self.np_img.shape)
     mask = mask_obj.mask[:, :, 0]
 
     return mask
