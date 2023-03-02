@@ -26,34 +26,38 @@ import pydicom as pdcm
 
 class ImgPatchExtractor:
 
-  def __init__(self, img_path, mask_path, root_dir, info):
+  def __init__(self, **kwargs):
     
-    self.p_size     = 512
-    self.h_patches  = 8
-    self.nh_patches = 8
-    self.mar_thresh = 0.01 # Mass area ratio threshold
-    self.bar_thresh = 0.8  # Breast area ratio threshold
+    self.dn         = kwargs["dn"] # Dataset name
+    self.p_size     = kwargs["p_size"]
+    self.h_patches  = kwargs["hppi"]
+    self.nh_patches = kwargs["nhppi"]
+    self.mar_thresh = kwargs["mar"] #0.01 # Mass area ratio threshold
+    self.bar_thresh = kwargs["bar"] #0.8  # Breast area ratio threshold
     self.p_idx      = 0
-    self.info       = info
+    self.info       = kwargs["info"] # This is used only for the MIAS dataset
 
-    self.img_path   = img_path
-    self.mask_path  = mask_path
-    self.root_dir   = root_dir
+    self.img_path   = kwargs["img_path"]
+    self.mask_path  = kwargs["mask_path"]
+    self.root_dir   = kwargs["root_dir"]
     self.img_proc   = self.exec_pipeline()
 
 
+  # Exec_pipeline:
+  # --------------
+  # This is the orchestrating function that combines the individual
+  # mechanisms of this class in order to achieve the extraction of patches
+  # from any input image. It returns True if everything goes as planned. 
+  # Otherwise, it returns a False value.
   def exec_pipeline(self):
-    # self.correct_paths()
+    if self.dn == "CBIS":
+      self.correct_paths()
 
-    self.np_img = self.load_img_obj(self.img_path)
-    self.np_mask = self.load_mask()
+    self.np_img = self.load_img_obj(self.img_path, self.dn)
+    self.np_mask = self.load_mask(self.mask_path, self.dn)
 
     temp_img, brdrs = inutils.crop_image(self.np_img)
-    # print(brdrs)
-    # self.np_mask = self.np_mask[brdrs[2]:brdrs[3], brdrs[0]:brdrs[1]]
-
-    # self.np_img  = self.img2array(img)
-    # self.np_mask = self.img2array(mask)
+    
 
     self.step_init   = (np.min(self.np_img.shape)) // 200
     self.step        = self.step_init
@@ -62,7 +66,10 @@ class ImgPatchExtractor:
     if not self.valid_pair:
       return False
 
-    self.np_img, self.np_mask = self.flip_img_hor(temp_img[brdrs[2]:brdrs[3], brdrs[0]:brdrs[1]], self.np_img, self.np_mask)
+    if self.dn == "CBIS" or self.dn == "INbreast":
+      self.np_img, self.np_mask = self.flip_img_hor(self.np_img, self.np_mask)
+    else:
+      self.np_img, self.np_mask = self.flip_img_hor(temp_img[brdrs[2]:brdrs[3], brdrs[0]:brdrs[1]], self.np_img, self.np_mask)
     self.patches = self.extract_patches(True)
       
     return True
@@ -142,7 +149,7 @@ class ImgPatchExtractor:
   #
   # --> mask_path: the path to the annotation mask
   # --> dn: dataset name: INBREAST, CBIS or MIAS
-  def load_img_obj(self, mask_path, dn):
+  def load_mask(self, mask_path, dn):
     assert x == 'CBIS' or x == 'MIAS' or x == 'INBreast', "Wrong dataset name"
 
     if dn == "CBIS":
