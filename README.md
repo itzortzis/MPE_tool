@@ -10,7 +10,7 @@ Required Libraries:
 
 **Note:** The anot_core library can be installed using the following command:
 
-pip3 install git+https://github.com/itzortzis/INBreast_XML_parser.git
+pip3 install git+https://github.com/itzortzis/MPE_tool.git
 
 
 Files and description:
@@ -36,7 +36,7 @@ The MPE_tool can be cloned from here or it can be installed using Python pip too
 - Option 1: Clone the repository and see the demo files in python and notebook folders
 - Option 2:
   - Install tool using ```pip3 install git+https://github.com/itzortzis/MPE_tool.git```
-  - Import the needed components ```import annotation```
+  - Import the needed components ```from MPE_core import mpe```
 
 Enjoy!!!
 
