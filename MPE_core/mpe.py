@@ -56,7 +56,7 @@ class ImgPatchExtractor:
     self.np_img = self.load_img_obj(self.img_path, self.dn)
     self.np_mask = self.load_mask(self.mask_path, self.dn)
 
-    temp_img, brdrs = inutils.crop_image(self.np_img)
+    temp_img, brdrs = self.crop_img(self.np_img)
 
 
     self.step_init   = (np.min(self.np_img.shape)) // 200
@@ -73,6 +73,25 @@ class ImgPatchExtractor:
     self.patches = self.extract_patches(True)
 
     return True
+
+
+  # Crop_img:
+  # ---------
+  # Given an img object (numpy array), this function performs a simple cropping
+  # in order to get rid of any non-essential regions containing no breast tissue.
+  #
+  # --> img: pixel array of the image (numpy array)
+  # <-- crpd: the cropped pixel array - image with no black colored padding
+  def crop_img(self, img):
+      borders = np.nonzero(a)
+      t = np.min(borders[0])
+      b = np.max(borders[0])
+      l = np.min(borders[1])
+      r = np.max(borders[1])
+
+      crpd = img[t:b, l:r]
+
+      return crpd, (l, r, t, d)
 
 
   # Correct_paths:
