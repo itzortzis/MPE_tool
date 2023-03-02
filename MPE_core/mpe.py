@@ -27,7 +27,7 @@ import pydicom as pdcm
 class ImgPatchExtractor:
 
   def __init__(self, **kwargs):
-    
+
     self.dn         = kwargs["dn"] # Dataset name
     self.p_size     = kwargs["p_size"]
     self.h_patches  = kwargs["hppi"]
@@ -47,7 +47,7 @@ class ImgPatchExtractor:
   # --------------
   # This is the orchestrating function that combines the individual
   # mechanisms of this class in order to achieve the extraction of patches
-  # from any input image. It returns True if everything goes as planned. 
+  # from any input image. It returns True if everything goes as planned.
   # Otherwise, it returns a False value.
   def exec_pipeline(self):
     if self.dn == "CBIS":
@@ -57,12 +57,12 @@ class ImgPatchExtractor:
     self.np_mask = self.load_mask(self.mask_path, self.dn)
 
     temp_img, brdrs = inutils.crop_image(self.np_img)
-    
+
 
     self.step_init   = (np.min(self.np_img.shape)) // 200
     self.step        = self.step_init
     self.valid_pair  = self.np_img.shape == self.np_mask.shape
-    
+
     if not self.valid_pair:
       return False
 
@@ -71,7 +71,7 @@ class ImgPatchExtractor:
     else:
       self.np_img, self.np_mask = self.flip_img_hor(temp_img[brdrs[2]:brdrs[3], brdrs[0]:brdrs[1]], self.np_img, self.np_mask)
     self.patches = self.extract_patches(True)
-      
+
     return True
 
 
@@ -88,7 +88,7 @@ class ImgPatchExtractor:
 
   # Load_img_obj:
   # -------------
-  # Given the image path and the name of the dataset where it belongs to, this 
+  # Given the image path and the name of the dataset where it belongs to, this
   # function utilizes the proper function to load the image object.
   #
   # --> img_path: the path to the original image
@@ -108,7 +108,7 @@ class ImgPatchExtractor:
   # -------------------
   # This function implements the custom solution for loading the CBIS_DDSM
   # images.
-  # 
+  #
   # --> img_path: path to the original image
   # <-- g_img: the imported pixel array (numpy array)
   def load_CBIS_DDSM_img(self, img_path):
@@ -116,13 +116,13 @@ class ImgPatchExtractor:
     g_img = img.convert("L")
 
     return g_img
-  
+
 
   # Load_MIAS_img:
   # -------------------
   # This function implements the custom solution for loading the MIAS
   # images.
-  # 
+  #
   # --> img_path: path to the original image
   def load_MIAS_img(self, img_path):
     return cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
@@ -132,7 +132,7 @@ class ImgPatchExtractor:
   # -------------------
   # This function implements the custom solution for loading the INBreast
   # images.
-  # 
+  #
   # --> img_path: path to the original image
   # <-- arr: the imported pixel array (numpy array)
   def load_INBreast_img(self, img_path):
@@ -144,7 +144,7 @@ class ImgPatchExtractor:
 
   # Load_mask_obj:
   # -------------
-  # Given the image path and the name of the dataset where it belongs to, this 
+  # Given the image path and the name of the dataset where it belongs to, this
   # function utilizes the proper function to load the annotation mask object.
   #
   # --> mask_path: the path to the annotation mask
@@ -164,7 +164,7 @@ class ImgPatchExtractor:
   # -------------------
   # This function implements the custom solution for loading the MIAS
   # annotation mask.
-  # 
+  #
   # <-- mask: the imported pixel array (numpy array)
   def load_MIAS_mask(self):
     mask = np.zeros((self.np_img.shape[0], self.np_img.shape[1]))
@@ -183,7 +183,7 @@ class ImgPatchExtractor:
   # -------------------
   # This function implements the custom solution for loading the CBIS_DDSM
   # annotation masks.
-  # 
+  #
   # --> mask_path: path to the annotation mask
   # <-- mask: the imported pixel array (numpy array)
   def load_CBIS_DDSM_mask(self, mask_path):
@@ -192,18 +192,18 @@ class ImgPatchExtractor:
 
     return mask
 
-  
+
   # Load_INBreast_mask:
   # -------------------
   # This function implements the custom solution for loading the INBreast
   # annotation masks.
-  # 
+  #
   # --> mask_path: path to the annotation mask
   # <-- mask: the imported pixel array (numpy array)
   def load_INBreast_img(self, img_path):
     mask_obj = anot.Annotation(paths['xml'], self.mask_path, self.np_img.shape)
     mask = mask_obj.mask[:, :, 0]
-    
+
     return mask
 
 
@@ -211,7 +211,7 @@ class ImgPatchExtractor:
   # ----------
   # This function takes as input and image object and converts it to
   # numpy array
-  # 
+  #
   # --> im: the image object
   def img2array(self, im):
     return np.asarray(im)
@@ -221,7 +221,7 @@ class ImgPatchExtractor:
   # -----------
   # Given the annotation mask of a mammogram, this function returns True if
   # there is any non zero pixel.
-  # 
+  #
   # --> gt: the annotation mask (numpy array)
   def is_healthy(self, gt):
     return np.sum(gt) == 0
@@ -232,7 +232,7 @@ class ImgPatchExtractor:
   # Given a mammogram patch, this function checks its validity according to
   # the area of breast tissue compared with the total patch area. The function
   # returns True if the breast area is beyond the predefined threshold.
-  # 
+  #
   # --> p: self.p_size x self.psize mammogram patch
   def p_contains_tissue(self, p):
     p_area  = p.shape[0] ** 2
@@ -247,7 +247,7 @@ class ImgPatchExtractor:
   # Given a mammogram patch, this function checks its validity according to
   # the area of the mass compared with the total patch area. The function
   # returns True if the mass area is beyond the predefined threshold.
-  # 
+  #
   # --> p: self.p_size x self.psize mammogram patch
   # --> gt: the corresponding annotation mask
   def is_mar_valid(self, p, gt):
@@ -257,13 +257,13 @@ class ImgPatchExtractor:
 
     return m_cover >= self.mar_thresh
 
-  
+
   # Mass localization:
   # ------------------
   # Given the annotation mask, this function is looking for the borders
-  # of the existing mass. Then, it calculates a specific region where the 
-  # to left corner of the new random patch will be located. 
-  # 
+  # of the existing mass. Then, it calculates a specific region where the
+  # to left corner of the new random patch will be located.
+  #
   # --> gt: the annotation mask (numpy array)
   # <-- min_h: the top border of the region
   # <-- max_h: the bottom border of the region
@@ -275,7 +275,7 @@ class ImgPatchExtractor:
     max_h = np.max(borders[0])
     min_w = np.min(borders[1])
     max_w = np.max(borders[1])
-    
+
     max_d = max(max_h - min_h, max_w - min_w)
     offset = int(0.1 * max_d)
     min_h = min_h - offset
@@ -293,13 +293,13 @@ class ImgPatchExtractor:
 
     return (min_h, max_h, min_w, max_w)
 
-  
+
   # Adapt_step:
   # -----------
-  # According to the inputs, this function adapts the step that corresponds 
-  # to the parsing technique used to extract patches from the original 
+  # According to the inputs, this function adapts the step that corresponds
+  # to the parsing technique used to extract patches from the original
   # mammogram.
-  # 
+  #
   # --> inc: if True the step is increased, otherwhise it is decreased
   # --> sw: if True, the step is not altered.
   def adapt_step(self, inc, sw):
@@ -310,7 +310,7 @@ class ImgPatchExtractor:
       self.step += self.step_init * 2
     else:
       self.step -= self.step_init * 2
-    
+
     if self.step < self.step_init:
       self.step = self.step_init
 
@@ -322,7 +322,7 @@ class ImgPatchExtractor:
   # -------------
   # In an effort to achieve homogeneity, this function tries to flip
   # horizontally all the mammograms with "wrong" orientation.
-  # 
+  #
   # --> test_region: essential part of the image
   # --> img: the img to be flipped
   # --> gt: the annotation mask to be flipped
@@ -335,7 +335,7 @@ class ImgPatchExtractor:
 
     if rhs_col > lhs_col:
       return np.fliplr(img), np.fliplr(gt)
-    
+
     return img, gt
 
 
@@ -344,12 +344,12 @@ class ImgPatchExtractor:
   # This function finds random coordinations of the upper left corner of the
   # patch to be retrieved. These coordinations should be in a region specified
   # by the location of the mass.
-  # 
-  # --> borders: borders of the region where the upper left corner of the 
+  #
+  # --> borders: borders of the region where the upper left corner of the
   #              patch is located.
-  # <-- h: x-axis coordinate of the upper left corner of the patch to be 
+  # <-- h: x-axis coordinate of the upper left corner of the patch to be
   #        selected.
-  # <-- w: y-axis coordinate of the upper left corner of the patch to be 
+  # <-- w: y-axis coordinate of the upper left corner of the patch to be
   #        selected.
   def find_p_coords(self, borders):
     height = self.np_img.shape[0] - self.p_size
@@ -372,13 +372,13 @@ class ImgPatchExtractor:
 
     return h, w
 
-  
+
   # Patch_is_valid:
   # ---------------
   # Given a patch with the corresponding annotation mask, this function
   # ensures whether the patch is valid or not, according to the breast tissue
   # cover, the mass area, etc.
-  # 
+  #
   # --> patch: numpy array with the patch information
   # --> gt: the annotation mask of the patch
   def patch_is_valid(self, patch, gt):
@@ -396,13 +396,13 @@ class ImgPatchExtractor:
       self.nh_patches -= 1
 
     return True
-    
+
 
   # Extract_patches:
   # ----------------
-  # This is the main function for the extraction of the patches from the 
+  # This is the main function for the extraction of the patches from the
   # current mammogram.
-  # 
+  #
   # --> sw: enables/disables the adaptation of the step property
   # <-- extracted_patches: numpy array containing the retrieved patches
   def extract_patches(self, sw):
@@ -417,7 +417,7 @@ class ImgPatchExtractor:
       h, w  = self.find_p_coords(borders)
       patch = self.np_img[h : h + self.p_size, w : w + self.p_size]
       gt    = self.np_mask[h : h + self.p_size, w : w + self.p_size]
-      
+
       if not self.patch_is_valid(patch, gt):
         continue
 
@@ -425,7 +425,7 @@ class ImgPatchExtractor:
       extracted_patches[self.p_idx, :, :, 1] = gt
 
       self.p_idx += 1
-    
+
     if tries > 198:
       print("Exceed tries ", self.p_idx)
 
