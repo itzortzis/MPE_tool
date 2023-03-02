@@ -83,7 +83,7 @@ class ImgPatchExtractor:
   # --> img: pixel array of the image (numpy array)
   # <-- crpd: the cropped pixel array - image with no black colored padding
   def crop_img(self, img):
-      borders = np.nonzero(a)
+      borders = np.nonzero(img)
       t = np.min(borders[0])
       b = np.max(borders[0])
       l = np.min(borders[1])
