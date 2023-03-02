@@ -94,7 +94,7 @@ class ImgPatchExtractor:
   # --> img_path: the path to the original image
   # --> dn: dataset name: INBREAST, CBIS or MIAS
   def load_img_obj(self, img_path, dn):
-    assert x == 'CBIS' or x == 'MIAS' or x == 'INBreast', "Wrong dataset name"
+    assert dn == 'CBIS' or dn == 'MIAS' or dn == 'INBreast', "Wrong dataset name"
 
     if dn == "CBIS":
       return self.load_CBIS_DDSM_img(img_path)
@@ -150,7 +150,7 @@ class ImgPatchExtractor:
   # --> mask_path: the path to the annotation mask
   # --> dn: dataset name: INBREAST, CBIS or MIAS
   def load_mask(self, mask_path, dn):
-    assert x == 'CBIS' or x == 'MIAS' or x == 'INBreast', "Wrong dataset name"
+    assert dn == 'CBIS' or dn == 'MIAS' or dn == 'INBreast', "Wrong dataset name"
 
     if dn == "CBIS":
       return self.load_CBIS_DDSM_mask(mask_path)
