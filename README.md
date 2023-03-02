@@ -1,6 +1,8 @@
 # MPE_tool
 Mammogram Patches Extraction tool
 
+<img src="https://user-images.githubusercontent.com/105294556/222407074-0efadf82-9342-4700-abbe-a7421f393bd5.svg" width="200" height="200">
+
 This tool can be used for the extraction of patches from three open
 and well known datasets (INbreast, mini-MIAS and CBIS_DDSM) containing digital or digitized mammograms.
 
