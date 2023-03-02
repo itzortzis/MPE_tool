@@ -91,7 +91,7 @@ class ImgPatchExtractor:
 
       crpd = img[t:b, l:r]
 
-      return crpd, (l, r, t, d)
+      return crpd, (l, r, t, b)
 
 
   # Correct_paths:
