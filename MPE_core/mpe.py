@@ -90,35 +90,14 @@ class ImgPatchExtractor:
   
   def entro(self, img):
     return entropy(img, disk(10))
-  # def gamma(self):
-  #   return exposure.adjust_gamma(self.raw_img, 2)
   
-  # def gaussian_diff(self):
-  #   return difference_of_gaussians(self.raw_img, 10, 15)
-  
-  # def sobel_filter(self, t):
-  #   if t == 1:
-  #     target = sobel(self.raw_img)
-  #   elif t == 2:
-  #     target = (sobel_h(self.raw_img)<0)
-  #   elif t == 3:
-  #     target = (sobel_h(self.raw_img)>0)
-  #   elif t == 4:
-  #     target = (sobel_v(self.raw_img)<0)
-  #   elif t == 5:
-  #     target = (sobel_v(self.raw_img)>0)
-  #   return target
 
   def extract_features(self, img):
     img = img/4095
     self.filt_img[:, :, 0] = img
-    print(np.min(self.filt_img[:, :, 0]), np.max(self.filt_img[:, :, 0]))
     self.filt_img[:, :, 1] = self.histo(img)
-    print(np.min(self.filt_img[:, :, 1]), np.max(self.filt_img[:, :, 1]))
     self.filt_img[:, :, 2] = self.sigmo(img)
-    print(np.min(self.filt_img[:, :, 2]), np.max(self.filt_img[:, :, 2]))
     self.filt_img[:, :, 3] = self.entro(img)
-    print(np.min(self.filt_img[:, :, 3]), np.max(self.filt_img[:, :, 3]))
     # self.filt_img[:, :, 4] = self.histo(self.raw_img)
     return
     
