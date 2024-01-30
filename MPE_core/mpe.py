@@ -4,8 +4,12 @@ import random
 import numpy as np
 import pydicom as pdcm
 from skimage import exposure
+from skimage.filters.rank import entropy
+from skimage.morphology import disk
 import matplotlib.pyplot as plt
 from anot_core import annotation as anot
+from skimage.exposure import adjust_sigmoid
+from skimage.filters import difference_of_gaussians, sobel, sobel_h, sobel_v
 
 
 class ImgPatchExtractor:
@@ -58,10 +62,17 @@ class ImgPatchExtractor:
 
     e = np.where(self.np_img < 0.1)
 
+    self.raw_img = self.np_img.copy()
     if self.dn == "INBreast":
+      # print("xaxaxa")
       self.apply_filter()
       self.np_img[e] = 0
       self.np_mask = np.where(self.np_mask > 0, 1, 0)
+    self.filt_img = np.zeros((self.raw_img.shape[0], self.raw_img.shape[1], 4))
+    img = self.raw_img.copy()
+    # print("Img before: ", np.count_nonzero(self.np_img))
+    self.extract_features(img)
+    # print("Img after: ", np.count_nonzero(self.np_img))
 
     self.patches = self.extract_patches(True)
       
@@ -69,8 +80,48 @@ class ImgPatchExtractor:
 
 
   def apply_filter(self):
-    self.np_img =  exposure.equalize_hist(self.np_img)
+    self.np_img = exposure.equalize_hist(self.np_img)
+    
+  def histo(self, img):
+    return exposure.equalize_hist(img)
 
+  def sigmo(self, img):
+    return adjust_sigmoid(img, cutoff=0.5, gain=10, inv=False)
+  
+  def entro(self, img):
+    return entropy(img, disk(10))
+  # def gamma(self):
+  #   return exposure.adjust_gamma(self.raw_img, 2)
+  
+  # def gaussian_diff(self):
+  #   return difference_of_gaussians(self.raw_img, 10, 15)
+  
+  # def sobel_filter(self, t):
+  #   if t == 1:
+  #     target = sobel(self.raw_img)
+  #   elif t == 2:
+  #     target = (sobel_h(self.raw_img)<0)
+  #   elif t == 3:
+  #     target = (sobel_h(self.raw_img)>0)
+  #   elif t == 4:
+  #     target = (sobel_v(self.raw_img)<0)
+  #   elif t == 5:
+  #     target = (sobel_v(self.raw_img)>0)
+  #   return target
+
+  def extract_features(self, img):
+    img = img/4095
+    self.filt_img[:, :, 0] = img
+    print(np.min(self.filt_img[:, :, 0]), np.max(self.filt_img[:, :, 0]))
+    self.filt_img[:, :, 1] = self.histo(img)
+    print(np.min(self.filt_img[:, :, 1]), np.max(self.filt_img[:, :, 1]))
+    self.filt_img[:, :, 2] = self.sigmo(img)
+    print(np.min(self.filt_img[:, :, 2]), np.max(self.filt_img[:, :, 2]))
+    self.filt_img[:, :, 3] = self.entro(img)
+    print(np.min(self.filt_img[:, :, 3]), np.max(self.filt_img[:, :, 3]))
+    # self.filt_img[:, :, 4] = self.histo(self.raw_img)
+    return
+    
 
   # Crop_img:
   # ---------
@@ -423,7 +474,7 @@ class ImgPatchExtractor:
   # --> sw: enables/disables the adaptation of the step property
   # <-- extracted_patches: numpy array containing the retrieved patches
   def extract_patches(self, sw):
-    shp = (self.h_patches + self.nh_patches, self.p_size, self.p_size, 2)
+    shp = (self.h_patches + self.nh_patches, self.p_size, self.p_size, 5)
     extracted_patches = np.zeros(shp)
     self.p_idx = 0
     h = 0
@@ -432,14 +483,16 @@ class ImgPatchExtractor:
     while (self.h_patches > 0 or self.nh_patches > 0) and tries < 200:
       tries += 1
       h, w  = self.find_p_coords(borders)
+      patch_filt = self.filt_img[h : h + self.p_size, w : w + self.p_size, :]
       patch = self.np_img[h : h + self.p_size, w : w + self.p_size]
       gt    = self.np_mask[h : h + self.p_size, w : w + self.p_size]
       
       if not self.patch_is_valid(patch, gt):
         continue
+      # print("zaaaa")
 
-      extracted_patches[self.p_idx, :, :, 0] = patch
-      extracted_patches[self.p_idx, :, :, 1] = gt
+      extracted_patches[self.p_idx, :, :, :4] = patch_filt
+      extracted_patches[self.p_idx, :, :, 4] = gt
 
       self.p_idx += 1
     
