@@ -1,3 +1,4 @@
+import os
 import cv2
 import PIL
 import random
@@ -5,6 +6,7 @@ import numpy as np
 import pydicom as pdcm
 from skimage import exposure
 from skimage.filters.rank import entropy
+import matplotlib.patches as patches
 from skimage.morphology import disk
 import matplotlib.pyplot as plt
 from anot_core import annotation as anot
@@ -28,7 +30,23 @@ class ImgPatchExtractor:
     self.img_path   = kwargs["img_path"]
     self.mask_path  = kwargs["mask_path"]
     self.root_dir   = kwargs["root_dir"]
+    self.issue      = 0
     self.img_proc   = self.exec_pipeline()
+    self.debbuger(True)
+    
+    
+  
+  def debbuger(self, enabled):
+    if not enabled:
+      return
+    if self.issue == 0:
+      print("Everything went as expected!")
+    if self.issue == 1:
+      print("Path related issue detected. Exiting...")
+    if self.issue == 2:
+      print("Annotation mask related issue detected. Exiting...")
+    if self.issue == 3:
+      print("Patch size related issue detected. Exiting...")
 
 
   # Exec_pipeline:
@@ -42,6 +60,8 @@ class ImgPatchExtractor:
       self.correct_paths()
 
     self.np_img = self.load_img_obj(self.img_path, self.dn)
+    if self.issue == 1:
+      return
     self.np_mask = self.load_mask(self.mask_path, self.dn)
 
     temp_img, brdrs = self.crop_img(self.np_img)
@@ -98,7 +118,7 @@ class ImgPatchExtractor:
     self.filt_img[:, :, 1] = self.histo(img)
     self.filt_img[:, :, 2] = self.sigmo(img)
     self.filt_img[:, :, 3] = self.entro(img)
-    # self.filt_img[:, :, 4] = self.histo(self.raw_img)
+    
     return
     
 
@@ -182,6 +202,11 @@ class ImgPatchExtractor:
   # --> img_path: path to the original image
   # <-- arr: the imported pixel array (numpy array)
   def load_INBreast_img(self, img_path):
+    path = self.root_dir + 'DICOM/' + img_path + '.dcm'
+    if not os.path.isfile(path):
+      self.issue = 1
+      arr = np.zeros((10, 10))
+      return arr
     img   = pdcm.dcmread(self.root_dir + 'DICOM/' + img_path + '.dcm')
     arr   = img.pixel_array
 
@@ -318,6 +343,12 @@ class ImgPatchExtractor:
   # <-- max_w: the right border of the region
   def mass_localization(self, gt):
     borders = np.nonzero(gt)
+    # print("Borders: ", borders, borders[0].shape, borders[1].shape)
+    if len(np.unique(gt)) == 1 and np.unique(gt)[0] == 0:
+      # Empty mask => healthy breast tissue => skip this mammogram
+      return (0, 0, 0, 0), False
+      
+    
     min_h = np.min(borders[0])
     max_h = np.max(borders[0])
     min_w = np.min(borders[1])
@@ -338,7 +369,7 @@ class ImgPatchExtractor:
     if max_w < 0:
       max_w = 0
 
-    return (min_h, max_h, min_w, max_w)
+    return (min_h, max_h, min_w, max_w), True
 
   
   # Adapt_step:
@@ -457,7 +488,10 @@ class ImgPatchExtractor:
     extracted_patches = np.zeros(shp)
     self.p_idx = 0
     h = 0
-    borders = self.mass_localization(self.np_mask)
+    borders, contains_tumor = self.mass_localization(self.np_mask)
+    if not contains_tumor:
+      self.issue = 2
+      return
     tries = 0
     while (self.h_patches > 0 or self.nh_patches > 0) and tries < 200:
       tries += 1
@@ -470,6 +504,9 @@ class ImgPatchExtractor:
         continue
       # print("zaaaa")
 
+      if patch_filt.shape[0] != self.p_size or patch_filt.shape[1] != self.p_size:
+        self.issue = 3
+        return
       extracted_patches[self.p_idx, :, :, :4] = patch_filt
       extracted_patches[self.p_idx, :, :, 4] = gt
 
